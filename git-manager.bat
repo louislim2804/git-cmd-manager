@@ -14,7 +14,7 @@ set GITHUB_TOKEN=YOUR_PERSONAL_ACCESS_TOKEN
 cls
 echo.
 echo  ================================
-echo   GIT MANAGER — %cd%
+echo   GIT MANAGER - %cd%
 echo  ================================
 echo.
 echo   [1]  Status         - See what changed
@@ -69,7 +69,39 @@ echo  === SAVE + PUSH ===
 echo.
 git status
 echo.
-set /p MSG=  Commit message (describe what you did): 
+
+:: Check if there is anything new to commit
+git diff --quiet --cached 2>nul
+git diff --quiet 2>nul
+for /f %%i in ('git status --porcelain') do set HAS_CHANGES=%%i
+
+if not defined HAS_CHANGES (
+    :: Nothing new to stage — check if there are unpushed commits
+    echo  Nothing new to commit.
+    for /f %%i in ('git log origin/main..HEAD --oneline 2^>nul') do set HAS_PENDING=%%i
+    if defined HAS_PENDING (
+        echo  You have unpushed commits. Pushing now...
+        echo.
+        git push 2>"%TEMP%\push_err.txt"
+        if errorlevel 1 (
+            findstr /i "upstream" "%TEMP%\push_err.txt" >nul
+            if not errorlevel 1 (
+                echo  No upstream set. Linking to origin/main...
+                git push --set-upstream origin main
+            ) else (
+                type "%TEMP%\push_err.txt"
+            )
+        )
+    ) else (
+        echo  Everything is already up to date on GitHub.
+    )
+    echo.
+    pause
+    goto MENU
+)
+
+set /p MSG=  Commit message (describe what you did) [0=Back]: 
+if "%MSG%"=="0" goto MENU
 if "%MSG%"=="" (
     echo  Message cannot be empty.
     pause
@@ -78,7 +110,6 @@ if "%MSG%"=="" (
 git add .
 git commit -m "%MSG%"
 
-:: Try normal push first; if upstream not set, set it automatically
 git push 2>"%TEMP%\push_err.txt"
 if errorlevel 1 (
     findstr /i "upstream" "%TEMP%\push_err.txt" >nul
@@ -119,7 +150,8 @@ echo.
 echo  Current branches:
 git branch
 echo.
-set /p BRANCH=  New branch name (e.g. feature/dark-mode): 
+set /p BRANCH=  New branch name (e.g. feature/dark-mode) [0=Back]: 
+if "%BRANCH%"=="0" goto MENU
 if "%BRANCH%"=="" (
     echo  Branch name cannot be empty.
     pause
@@ -145,7 +177,8 @@ echo.
 echo  Available branches:
 git branch
 echo.
-set /p BRANCH=  Branch to merge INTO current branch: 
+set /p BRANCH=  Branch to merge INTO current branch [0=Back]: 
+if "%BRANCH%"=="0" goto MENU
 if "%BRANCH%"=="" (
     echo  Branch name cannot be empty.
     pause
@@ -169,7 +202,8 @@ echo.
 echo  Available branches:
 git branch
 echo.
-set /p BRANCH=  Branch to switch to: 
+set /p BRANCH=  Branch to switch to [0=Back]: 
+if "%BRANCH%"=="0" goto MENU
 if "%BRANCH%"=="" (
     echo  Branch name cannot be empty.
     pause
@@ -204,7 +238,8 @@ echo.
 echo  This will initialize git and push to a NEW GitHub repo.
 echo  Make sure you have already created the empty repo on GitHub first!
 echo.
-set /p REPO=  GitHub repo name (e.g. yt-transcript-chrome-ext): 
+set /p REPO=  GitHub repo name (e.g. yt-transcript-chrome-ext) [0=Back]: 
+if "%REPO%"=="0" goto MENU
 if "%REPO%"=="" (
     echo  Repo name cannot be empty.
     pause
@@ -224,8 +259,9 @@ echo   [2]  Web App / Node.js
 echo   [3]  Python Tool
 echo   [4]  General (catch-all)
 echo.
-set /p PTYPE=  Project type: 
+set /p PTYPE=  Project type [0=Back]: 
 
+if "%PTYPE%"=="0" goto MENU
 if "%PTYPE%"=="1" goto GITIGNORE_EXTENSION
 if "%PTYPE%"=="2" goto GITIGNORE_NODE
 if "%PTYPE%"=="3" goto GITIGNORE_PYTHON
@@ -387,7 +423,8 @@ if /i not "%GICONFIRM%"=="y" goto MENU
 echo.
 echo  --- Step 2: Generate README.md ---
 echo.
-set /p DESC=  Short description of this project (1 sentence): 
+set /p DESC=  Short description of this project (1 sentence) [0=Back]: 
+if "%DESC%"=="0" goto MENU
 if "%DESC%"=="" set DESC=No description provided.
 
 :: Set project type label for README
@@ -428,7 +465,8 @@ echo  Should this repo be public or private?
 echo   [1]  Public  - Anyone can see it
 echo   [2]  Private - Only you can see it
 echo.
-set /p VISIBILITY=  Choose: 
+set /p VISIBILITY=  Choose [0=Back]: 
+if "%VISIBILITY%"=="0" goto MENU
 if "%VISIBILITY%"=="2" (
     set REPO_VISIBILITY=true
 ) else (
@@ -465,7 +503,8 @@ echo.
 echo  Files staged (secrets and junk excluded):
 git status --short
 echo.
-set /p INITMSG=  Commit message [press Enter for default]: 
+set /p INITMSG=  Commit message [Enter=default, 0=Back]: 
+if "%INITMSG%"=="0" goto MENU
 if "%INITMSG%"=="" set INITMSG=feat: initial commit - %REPO%
 git commit -m "%INITMSG%"
 git branch -M main
