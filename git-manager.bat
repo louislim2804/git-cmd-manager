@@ -89,7 +89,14 @@ if not defined HAS_CHANGES (
                 echo  No upstream set. Linking to origin/main...
                 git push --set-upstream origin main
             ) else (
-                type "%TEMP%\push_err.txt"
+                findstr /i "fetch first" "%TEMP%\push_err.txt" >nul
+                if not errorlevel 1 (
+                    echo  Remote has changes you don't have locally. Pulling first...
+                    git pull --rebase
+                    git push
+                ) else (
+                    type "%TEMP%\push_err.txt"
+                )
             )
         )
     ) else (
@@ -117,8 +124,15 @@ if errorlevel 1 (
         echo  No upstream set. Linking to origin/main automatically...
         git push --set-upstream origin main
     ) else (
-        echo  Push failed. Error:
-        type "%TEMP%\push_err.txt"
+        findstr /i "fetch first" "%TEMP%\push_err.txt" >nul
+        if not errorlevel 1 (
+            echo  Remote has changes you don't have locally. Pulling first...
+            git pull --rebase
+            git push
+        ) else (
+            echo  Push failed. Error:
+            type "%TEMP%\push_err.txt"
+        )
     )
 )
 echo.
