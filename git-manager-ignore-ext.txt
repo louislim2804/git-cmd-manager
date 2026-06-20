@@ -1,0 +1,31 @@
+# git-manager blocked extensions
+# Files with these extensions are NEVER committed to GitHub
+# Add one extension per line. Lines starting with # are comments.
+
+# Executables and binaries
+.exe
+.dll
+.bin
+.msi
+
+# Media files
+.mp4
+.mp3
+.m4a
+.m4v
+.wav
+.mov
+.avi
+.mkv
+.webm
+.opus
+.flac
+.aac
+.srt
+
+# Archives
+.zip
+.rar
+.7z
+.tar
+.gz
